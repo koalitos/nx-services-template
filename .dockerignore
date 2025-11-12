@@ -1,13 +1,26 @@
+# Nx / Node build artifacts
 node_modules
 dist
 tmp
 .nx/cache
+
+# VCS metadata
 .git
 .gitignore
+
+# Editor and tooling
 .vscode
+
+# Build definitions
 Dockerfile*
+
+# Development-only assets
 deploy
 docs
+
+# Environment files
 .env
 .env.*
+
+# Logs
 npm-debug.log*

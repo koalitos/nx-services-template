@@ -36,3 +36,27 @@ model CalculationLog {
 
   @@index([supabaseUserId])
 }
+
+model UserGroup {
+  id          String     @id @default(uuid())
+  name        String     @unique
+  description String?
+  isActive    Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  userTypes   UserType[]
+}
+
+model UserType {
+  id          String     @id @default(uuid())
+  name        String
+  description String?
+  isActive    Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  userGroupId String?
+
+  userGroup UserGroup? @relation(fields: [userGroupId], references: [id], onDelete: SetNull)
+
+  @@unique([userGroupId, name])
+}
