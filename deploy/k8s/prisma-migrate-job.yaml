@@ -1,0 +1,27 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: template-supa-prisma-migrate
+spec:
+  template:
+    metadata:
+      labels:
+        job: template-supa-prisma-migrate
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: migrate
+          image: ghcr.io/YOUR-ORG/template-supa-api:latest
+          imagePullPolicy: IfNotPresent
+          command: ["npx", "prisma", "migrate", "deploy"]
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: SUPABASE_REALTIME_CHANNEL
+              valueFrom:
+                configMapKeyRef:
+                  key: SUPABASE_REALTIME_CHANNEL
+                  name: template-supa-config
+          envFrom:
+            - secretRef:
+                name: template-supa-secrets

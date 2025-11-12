@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: template-supa-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: template-supa-api
+  template:
+    metadata:
+      labels:
+        app: template-supa-api
+    spec:
+      containers:
+        - name: api
+          image: ghcr.io/YOUR-ORG/template-supa-api:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  key: API_PORT
+                  name: template-supa-config
+            - name: SUPABASE_REALTIME_CHANNEL
+              valueFrom:
+                configMapKeyRef:
+                  key: SUPABASE_REALTIME_CHANNEL
+                  name: template-supa-config
+          envFrom:
+            - secretRef:
+                name: template-supa-secrets
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: template-supa-api
+spec:
+  selector:
+    app: template-supa-api
+  ports:
+    - name: http
+      port: 80
+      targetPort: 3000
+  type: ClusterIP

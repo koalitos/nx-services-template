@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: template-supa-config
+data:
+  API_PORT: "3000"
+  AUTH_PORT: "3001"
+  SUPABASE_REALTIME_CHANNEL: "calculations"
