@@ -23,6 +23,7 @@ import { ProfilesModule } from './profiles/profiles.module';
         SUPABASE_URL: Joi.string().uri().required(),
         SUPABASE_ANON_KEY: Joi.string().required(),
         SUPABASE_SERVICE_ROLE_KEY: Joi.string().required(),
+        ADMIN_API_KEY: Joi.string().min(16).required(),
       }),
     }),
     PrismaModule,

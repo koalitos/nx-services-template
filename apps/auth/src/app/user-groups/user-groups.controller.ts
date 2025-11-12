@@ -1,10 +1,12 @@
-import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, UseGuards } from '@nestjs/common';
 import { ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CreateUserGroupDto } from './dto/create-user-group.dto';
 import { UpdateUserGroupDto } from './dto/update-user-group.dto';
 import { UserGroupsService } from './user-groups.service';
+import { AdminApiKeyGuard } from '../common/guards/admin-api-key.guard';
 
 @ApiTags('user-groups')
+@UseGuards(AdminApiKeyGuard)
 @Controller('user-groups')
 export class UserGroupsController {
   constructor(private readonly userGroupsService: UserGroupsService) {}

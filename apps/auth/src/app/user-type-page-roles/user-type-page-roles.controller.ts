@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -8,13 +9,17 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { CreateUserTypePageRoleDto } from './dto/create-user-type-page-role.dto';
 import { UpdateUserTypePageRoleDto } from './dto/update-user-type-page-role.dto';
 import { UserTypePageRolesService } from './user-type-page-roles.service';
+import { AdminApiKeyGuard } from '../common/guards/admin-api-key.guard';
+import { isUUID } from 'class-validator';
 
 @ApiTags('user-type-page-roles')
+@UseGuards(AdminApiKeyGuard)
 @Controller('user-type-page-roles')
 export class UserTypePageRolesController {
   constructor(private readonly userTypePageRolesService: UserTypePageRolesService) {}
@@ -40,10 +45,13 @@ export class UserTypePageRolesController {
   })
   @ApiOkResponse({ description: 'Roles retornadas.' })
   findAll(
-    @Query('userTypeId', new ParseUUIDPipe({ version: '4', optional: true })) userTypeId?: string,
-    @Query('pageId', new ParseUUIDPipe({ version: '4', optional: true })) pageId?: string
+    @Query('userTypeId') userTypeId?: string,
+    @Query('pageId') pageId?: string
   ) {
-    return this.userTypePageRolesService.findAll({ userTypeId, pageId });
+    return this.userTypePageRolesService.findAll({
+      userTypeId: this.validateOptionalUuid(userTypeId, 'userTypeId'),
+      pageId: this.validateOptionalUuid(pageId, 'pageId'),
+    });
   }
 
   @Get(':id')
@@ -68,5 +76,17 @@ export class UserTypePageRolesController {
   @ApiOkResponse({ description: 'Role removida.' })
   remove(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.userTypePageRolesService.remove(id);
+  }
+
+  private validateOptionalUuid(value: string | undefined, field: string): string | undefined {
+    if (value === undefined) {
+      return undefined;
+    }
+
+    if (!isUUID(value, '4')) {
+      throw new BadRequestException(`${field} deve ser um UUID v4 valido.`);
+    }
+
+    return value;
   }
 }

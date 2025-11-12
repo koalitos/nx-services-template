@@ -1,4 +1,4 @@
-# Template Supabase + Nest + Nx
+﻿# Template Supabase + Nest + Nx
 
 Backend de referencia para iniciar projetos NestJS usando Nx, Prisma e Supabase (Auth + Realtime), agora dividido em dois servicos:
 
@@ -17,7 +17,7 @@ Backend de referencia para iniciar projetos NestJS usando Nx, Prisma e Supabase 
    ```bash
    cp .env.example .env
    ```
-2. Ajuste `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_ANON_KEY` e `SUPABASE_SERVICE_ROLE_KEY` conforme seu projeto Supabase.
+2. Ajuste `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` e defina um `ADMIN_API_KEY` forte para proteger as rotas administrativas do Auth Service.
 3. Gere o client Prisma sempre que alterar `schema.prisma`:
    ```bash
    npm run prisma:generate
@@ -47,6 +47,7 @@ Backend de referencia para iniciar projetos NestJS usando Nx, Prisma e Supabase 
   - registra log via Prisma;
   - dispara evento no Supabase Realtime.
 - **Microservico de Auth** (`apps/auth`) com `POST /auth/register` e `POST /auth/login` para criar usuarios e emitir JWTs do Supabase (via Service Role Key).
+- **Console RBAC protegido por API key**: CRUDs para grupos, tipos, paginas e vinculos tipo/pagina, alem do gerenciamento de perfis (`PATCH /auth/profiles/:supabaseUserId` para atualizar displayName/avatar e `/user-type` para alterar o tipo associado).
 - **Swagger + ValidationPipe** habilitados em ambos os servicos.
 
 ## Scripts uteis
@@ -63,7 +64,7 @@ Backend de referencia para iniciar projetos NestJS usando Nx, Prisma e Supabase 
 | `npm run prisma:push` / `prisma:migrate` / `prisma:studio` | Fluxo Prisma padrao. |
 
 ## Documentacao
-Detalhes sobre integra�ao com Supabase, Realtime, Prisma e as rotas (incluindo o novo microservico de auth) estao em [`docs/INTEGRATION.md`](docs/INTEGRATION.md).
+Detalhes sobre integraçao com Supabase, Realtime, Prisma e as rotas (incluindo o novo microservico de auth) estao em [`docs/INTEGRATION.md`](docs/INTEGRATION.md).
 
 ---
 Use os generators do Nx (`npx nx g ...`) para criar novos servicos/libs e expandir este template conforme a evolucao do seu produto.

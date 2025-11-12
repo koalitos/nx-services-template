@@ -1,10 +1,12 @@
-import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, UseGuards } from '@nestjs/common';
 import { ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CreatePageDto } from './dto/create-page.dto';
 import { UpdatePageDto } from './dto/update-page.dto';
 import { PagesService } from './pages.service';
+import { AdminApiKeyGuard } from '../common/guards/admin-api-key.guard';
 
 @ApiTags('pages')
+@UseGuards(AdminApiKeyGuard)
 @Controller('pages')
 export class PagesController {
   constructor(private readonly pagesService: PagesService) {}

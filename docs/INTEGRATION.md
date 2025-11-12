@@ -1,29 +1,29 @@
-# Template Supabase + NestJS
+﻿# Template Supabase + NestJS
 
-Este template entrega um backend NestJS organizado com Nx, autenticação e realtime usando Supabase e ORM via Prisma.
+Este template entrega um backend NestJS organizado com Nx, autenticaÃ§Ã£o e realtime usando Supabase e ORM via Prisma.
 
-## Sumário rápido
-- `apps/api` — API NestJS (main entry em `apps/api/src/main.ts`).
-- `prisma/schema.prisma` — modelos persistidos no Postgres do Supabase.
-- `apps/api/src/app/supabase` — integração com Supabase (serviços, guard e decorator).
-- `apps/api/src/app/math` — exemplo de rota autenticada (`POST /api/math/add`).
+## SumÃ¡rio rÃ¡pido
+- `apps/api` â€” API NestJS (main entry em `apps/api/src/main.ts`).
+- `prisma/schema.prisma` â€” modelos persistidos no Postgres do Supabase.
+- `apps/api/src/app/supabase` â€” integraÃ§Ã£o com Supabase (serviÃ§os, guard e decorator).
+- `apps/api/src/app/math` â€” exemplo de rota autenticada (`POST /api/math/add`).
 
-## Pré-requisitos
+## PrÃ©-requisitos
 1. Node 20+ com npm.
-2. Banco Postgres do Supabase (pode reutilizar o mesmo projeto que já fornece Auth/Realtime).
+2. Banco Postgres do Supabase (pode reutilizar o mesmo projeto que jÃ¡ fornece Auth/Realtime).
 3. Supabase CLI (opcional) para inspecionar logs.
 
-## Configuração
+## ConfiguraÃ§Ã£o
 1. Copie o arquivo de ambiente:
    ```bash
    cp .env.example .env
    ```
-2. Preencha variáveis:
-   - `DATABASE_URL`: string de conexão do banco do Supabase (`postgresql://...`).
-   - `SUPABASE_URL`: URL pública do projeto (`https://xyzcompany.supabase.co`).
-   - `SUPABASE_ANON_KEY`: chave `anon` (JWT público usado pelo front).
-   - `SUPABASE_SERVICE_ROLE_KEY`: chave service role (mantê-la apenas no backend).
-   - `SUPABASE_REALTIME_CHANNEL`: canal padrão para broadcasts (ex.: `calculations`).
+2. Preencha variÃ¡veis:
+   - `DATABASE_URL`: string de conexÃ£o do banco do Supabase (`postgresql://...`).
+   - `SUPABASE_URL`: URL pÃºblica do projeto (`https://xyzcompany.supabase.co`).
+   - `SUPABASE_ANON_KEY`: chave `anon` (JWT pÃºblico usado pelo front).
+   - `SUPABASE_SERVICE_ROLE_KEY`: chave service role (mantÃª-la apenas no backend).
+   - `SUPABASE_REALTIME_CHANNEL`: canal padrÃ£o para broadcasts (ex.: `calculations`).
 3. Gere o client Prisma sempre que alterar o schema:
    ```bash
    npm run prisma:generate
@@ -36,17 +36,17 @@ Este template entrega um backend NestJS organizado com Nx, autenticação e real
    ```bash
    npm run dev
    ```
-   Swagger ficará em `http://localhost:3000/api/docs`.
+   Swagger ficarÃ¡ em `http://localhost:3000/api/docs`.
 
-## Autenticação Supabase
-- O guard `SupabaseAuthGuard` lê o header `Authorization: Bearer <token>` e consulta o Supabase Auth via `SupabaseService`.
-- Ao anotar um controller com `@UseGuards(SupabaseAuthGuard)` o request passa a ter o usuário `supabase.user`.
-- Use o decorator `@SupabaseUser()` para injetar os dados do usuário em handlers.
-- Para testar pelo Swagger: autentique via Supabase (por ex. `supabase.auth.signIn`, CLI ou dashboard), copie o `access_token` e cole no botão **Authorize**.
+## AutenticaÃ§Ã£o Supabase
+- O guard `SupabaseAuthGuard` lÃª o header `Authorization: Bearer <token>` e consulta o Supabase Auth via `SupabaseService`.
+- Ao anotar um controller com `@UseGuards(SupabaseAuthGuard)` o request passa a ter o usuÃ¡rio `supabase.user`.
+- Use o decorator `@SupabaseUser()` para injetar os dados do usuÃ¡rio em handlers.
+- Para testar pelo Swagger: autentique via Supabase (por ex. `supabase.auth.signIn`, CLI ou dashboard), copie o `access_token` e cole no botÃ£o **Authorize**.
 
 ## Realtime
 - `SupabaseRealtimeService` usa o client com service role para publicar eventos `broadcast`.
-- O método `notifyCalculation` envia payloads para o canal configurado (`SUPABASE_REALTIME_CHANNEL`) com o evento `calculation.performed`.
+- O mÃ©todo `notifyCalculation` envia payloads para o canal configurado (`SUPABASE_REALTIME_CHANNEL`) com o evento `calculation.performed`.
 - No frontend, basta assinar:
   ```ts
   const channel = supabase.channel('calculations');
@@ -55,12 +55,12 @@ Este template entrega um backend NestJS organizado com Nx, autenticação e real
   });
   await channel.subscribe();
   ```
-- É possível usar o método `broadcast` para outros eventos/canais.
+- Ã‰ possÃ­vel usar o mÃ©todo `broadcast` para outros eventos/canais.
 
 ## Prisma e modelos
 - `Profile`: armazena dados adicionais ligados ao `supabaseUserId`.
 - `CalculationLog`: audit trail das somas feitas na rota de exemplo.
-- Use `npm run prisma:migrate` para versionar alterações e `npm run prisma:studio` para visualizar dados.
+- Use `npm run prisma:migrate` para versionar alteraÃ§Ãµes e `npm run prisma:studio` para visualizar dados.
 
 ## Rota de exemplo `POST /api/math/add`
 Corpo aceito:
@@ -72,8 +72,8 @@ Corpo aceito:
 ```
 Fluxo:
 1. Guard valida o token Supabase.
-2. Serviço grava `CalculationLog` via Prisma.
-3. Evento realtime é disparado com `operands`, `result`, `logId` e `userId`.
+2. ServiÃ§o grava `CalculationLog` via Prisma.
+3. Evento realtime Ã© disparado com `operands`, `result`, `logId` e `userId`.
 4. Resposta:
    ```json
    {
@@ -123,22 +123,31 @@ Fluxo:
   ```
 - Use o `accessToken` no header `Authorization: Bearer <token>` para chamar rotas protegidas do servico principal (`/api/math/add`).
 
+## Rotas administrativas (RBAC)
+- Defina `ADMIN_API_KEY` no `.env` e envie o valor no header `x-admin-key` ou `Authorization: Bearer <chave>` para acessar os CRUDs do Auth Service.
+- Endpoints disponiveis:
+  - `POST/GET/PATCH/DELETE /auth/user-groups` e `/auth/user-types` para organizar grupos e tipos.
+  - `POST/GET/PATCH/DELETE /auth/pages` e `/auth/user-type-page-roles` para registrar paginas do frontend e atrelar permissoes por tipo.
+  - `PATCH /auth/profiles/:supabaseUserId` para atualizar `displayName`/`avatarUrl`.
+  - `PATCH /auth/profiles/:supabaseUserId/user-type` para vincular ou remover um tipo de usuario do perfil.
+- Todos retornam os relacionamentos principais (tipo com grupo, roles com pagina, perfil com tipo) para facilitar a exibicao em dashboards administrativos.
+
 ## Swagger
 - Configurado em `apps/api/src/main.ts`.
-- Documenta autenticação bearer (`supabase-auth`) e as rotas `health` + `math`.
-- JSON disponível em `/api/docs/swagger.json` (útil para gerar SDKs).
+- Documenta autenticaÃ§Ã£o bearer (`supabase-auth`) e as rotas `health` + `math`.
+- JSON disponÃ­vel em `/api/docs/swagger.json` (Ãºtil para gerar SDKs).
 
-## Scripts úteis
-| Script | Descrição |
+## Scripts Ãºteis
+| Script | DescriÃ§Ã£o |
 | ------ | --------- |
 | `npm run dev` | `nx serve api` com watch e HMR. |
 | `npm run build` | Compila para `dist/apps/api`. |
 | `npm run start:prod` | Executa o build compilado. |
 | `npm run test` | `nx test api`. |
 | `npm run lint` | `nx lint api`. |
-| `npm run prisma:(generate|push|migrate|studio)` | Operações Prisma padrão. |
+| `npm run prisma:(generate|push|migrate|studio)` | OperaÃ§Ãµes Prisma padrÃ£o. |
 
-## Próximos passos sugeridos
+## PrÃ³ximos passos sugeridos
 - Criar migrations oficiais (`npm run prisma:migrate`) para ambientes controlados.
-- Ampliar os módulos Nx (por exemplo `libs/database`) se houver múltiplos apps.
-- Configurar pipelines CI/CD usando os targets Nx disponíveis.
+- Ampliar os mÃ³dulos Nx (por exemplo `libs/database`) se houver mÃºltiplos apps.
+- Configurar pipelines CI/CD usando os targets Nx disponÃ­veis.

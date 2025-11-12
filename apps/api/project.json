@@ -61,6 +61,12 @@
         }
       }
     },
+    "deploy": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node tools/scripts/deploy-app.mjs --project=api"
+      }
+    },
     "test": {
       "options": {
         "passWithNoTests": true

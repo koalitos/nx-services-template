@@ -1,7 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateProfileUserTypeDto } from './dto/update-profile-user-type.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 
 @Injectable()
 export class ProfilesService {
@@ -51,6 +52,30 @@ export class ProfilesService {
 
     if (Object.prototype.hasOwnProperty.call(dto, 'userTypeId')) {
       data.userTypeId = dto.userTypeId ?? null;
+    }
+
+    return this.prisma.profile.update({
+      where: { supabaseUserId },
+      data,
+      include: this.profileInclude(),
+    });
+  }
+
+  async updateProfileDetails(supabaseUserId: string, dto: UpdateProfileDto) {
+    await this.ensureProfileExists(supabaseUserId);
+
+    const data: Prisma.ProfileUncheckedUpdateInput = {};
+
+    if (dto.displayName !== undefined) {
+      data.displayName = dto.displayName?.trim() ?? null;
+    }
+
+    if (dto.avatarUrl !== undefined) {
+      data.avatarUrl = dto.avatarUrl ?? null;
+    }
+
+    if (Object.keys(data).length === 0) {
+      throw new BadRequestException('Informe ao menos um campo para atualizar.');
     }
 
     return this.prisma.profile.update({

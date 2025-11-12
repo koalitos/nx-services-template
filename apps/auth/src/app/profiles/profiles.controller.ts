@@ -1,9 +1,12 @@
-import { Body, Controller, Get, Param, Patch } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, UseGuards } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ProfilesService } from './profiles.service';
 import { UpdateProfileUserTypeDto } from './dto/update-profile-user-type.dto';
+import { AdminApiKeyGuard } from '../common/guards/admin-api-key.guard';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 
 @ApiTags('profiles')
+@UseGuards(AdminApiKeyGuard)
 @Controller('profiles')
 export class ProfilesController {
   constructor(private readonly profilesService: ProfilesService) {}
@@ -30,5 +33,15 @@ export class ProfilesController {
     @Body() dto: UpdateProfileUserTypeDto
   ) {
     return this.profilesService.updateUserType(supabaseUserId, dto);
+  }
+
+  @Patch(':supabaseUserId')
+  @ApiOperation({ summary: 'Atualiza dados basicos do perfil (displayName, avatar).' })
+  @ApiOkResponse({ description: 'Perfil atualizado.' })
+  updateProfile(
+    @Param('supabaseUserId') supabaseUserId: string,
+    @Body() dto: UpdateProfileDto
+  ) {
+    return this.profilesService.updateProfileDetails(supabaseUserId, dto);
   }
 }

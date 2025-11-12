@@ -15,6 +15,15 @@ docker push ghcr.io/YOUR-ORG/template-supa-auth:latest
 
 Both Dockerfiles compile the respective NestJS app with Nx/webpack, run `prisma generate`, install production dependencies and copy the Prisma engines needed at runtime. Provide the environment variables at runtime (see `.env.example`).
 
+### Deploy incremental com Nx
+Para evitar deploys desnecessários, use o alvo `deploy` do Nx para aplicar somente os serviços alterados:
+
+```bash
+npm run deploy:affected
+```
+
+O script descobre os projetos afetados comparando `NX_BASE` (ou `BASE_REF`/`GITHUB_BASE_REF`, padrão `origin/main`) com `NX_HEAD` (`HEAD` por padrão) e executa `kubectl apply` apenas para os manifests correspondentes (`deploy/k8s/api.yaml` ou `deploy/k8s/auth.yaml`).
+
 ## Kubernetes
 1. Edit `deploy/k8s/secret-example.yaml` with the credentials from o seu projeto Supabase e aplique como um `Secret` real (ex.: `kubectl apply -f deploy/k8s/secret-example.yaml`).
 2. Ajuste `deploy/k8s/configmap.yaml` caso queira mudar portas ou o canal default do Realtime.
