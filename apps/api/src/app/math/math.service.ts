@@ -59,6 +59,7 @@ export class MathService {
       where: { supabaseUserId: user.id },
       create: {
         supabaseUserId: user.id,
+        handle: this.buildHandle(user),
         displayName,
         avatarUrl,
       },
@@ -67,5 +68,20 @@ export class MathService {
         avatarUrl,
       },
     });
+  }
+
+  private buildHandle(user: SupabaseAuthUser) {
+    const existingHandle = (user.user_metadata?.handle as string | undefined)?.trim();
+    if (existingHandle) {
+      return existingHandle.toLowerCase();
+    }
+
+    const emailBase =
+      user.email?.split('@')[0]?.toLowerCase().replace(/[^a-z0-9]/g, '') ?? '';
+    if (emailBase.length >= 3) {
+      return `${emailBase}-${user.id.replace(/-/g, '').slice(0, 4)}`;
+    }
+
+    return `user-${user.id.replace(/-/g, '').slice(0, 8)}`;
   }
 }

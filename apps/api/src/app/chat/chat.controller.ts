@@ -49,6 +49,38 @@ export class ChatController {
     return this.chatService.listRooms(currentUser.id);
   }
 
+  @Post('direct/:handle')
+  @ApiOperation({ summary: 'Inicia (ou recupera) uma conversa direta com outro usuario.' })
+  @ApiCreatedResponse({ description: 'Sala direta pronta para uso.' })
+  startDirectChat(
+    @SupabaseUser() user: SupabaseAuthUser | undefined,
+    @Param('handle') handle: string
+  ) {
+    return this.chatService.startDirectChat(this.ensureUser(user), handle);
+  }
+
+  @Post('direct/:handle/messages')
+  @ApiOperation({ summary: 'Envia mensagem diretamente para um usuario (estilo WhatsApp).' })
+  @ApiCreatedResponse({ description: 'Mensagem enviada.' })
+  sendDirectMessage(
+    @SupabaseUser() user: SupabaseAuthUser | undefined,
+    @Param('handle') handle: string,
+    @Body() dto: SendMessageDto
+  ) {
+    return this.chatService.sendDirectMessage(this.ensureUser(user), handle, dto);
+  }
+
+  @Get('direct/:handle/messages')
+  @ApiOperation({ summary: 'Consulta o historico de mensagens diretas com um usuario.' })
+  @ApiOkResponse({ description: 'Historico retornado.' })
+  getDirectMessages(
+    @SupabaseUser() user: SupabaseAuthUser | undefined,
+    @Param('handle') handle: string,
+    @Query() query: ListMessagesDto
+  ) {
+    return this.chatService.getDirectMessages(this.ensureUser(user), handle, query);
+  }
+
   @Post('rooms/:roomId/messages')
   @ApiOperation({ summary: 'Envia uma mensagem criptografada para a sala.' })
   @ApiCreatedResponse({ description: 'Mensagem enviada.' })

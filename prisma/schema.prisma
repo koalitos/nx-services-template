@@ -17,6 +17,7 @@ datasource db {
 model Profile {
   id              String           @id @default(uuid())
   supabaseUserId  String           @unique
+  handle          String           @unique
   displayName     String?
   avatarUrl       String?
   userTypeId      String?
@@ -24,6 +25,7 @@ model Profile {
   updatedAt       DateTime         @updatedAt
   calculationLogs CalculationLog[]
   userType        UserType?        @relation(fields: [userTypeId], references: [id], onDelete: SetNull)
+  chatParticipants ChatParticipant[]
 }
 
 model CalculationLog {
@@ -94,6 +96,8 @@ model UserTypePageRole {
 model ChatRoom {
   id           String            @id @default(uuid())
   name         String
+  type         ChatRoomType      @default(GROUP)
+  directKey    String?           @unique
   createdAt    DateTime          @default(now())
   updatedAt    DateTime          @updatedAt
   participants ChatParticipant[]
@@ -108,6 +112,7 @@ model ChatParticipant {
   leftAt         DateTime?
 
   chatRoom ChatRoom   @relation(fields: [chatRoomId], references: [id], onDelete: Cascade)
+  profile  Profile    @relation(fields: [supabaseUserId], references: [supabaseUserId], onDelete: Cascade)
   messages ChatMessage[]
 
   @@unique([chatRoomId, supabaseUserId])
@@ -127,4 +132,9 @@ model ChatMessage {
   participant ChatParticipant @relation(fields: [senderParticipantId], references: [id], onDelete: Cascade)
 
   @@index([chatRoomId, createdAt])
+}
+
+enum ChatRoomType {
+  GROUP
+  DIRECT
 }

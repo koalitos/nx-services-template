@@ -79,6 +79,11 @@ O módulo `ChatModule` permite criar salas multiusuário com histórico persiste
 | `GET /api/chat/rooms` | Lista salas em que o usuário participa + último recado. |
 | `POST /api/chat/rooms/:roomId/messages` | Envia mensagem. O texto é criptografado com AES-256-GCM antes do armazenamento e o evento `chat.message` é publicado em `chat.room.{roomId}`. |
 | `GET /api/chat/rooms/:roomId/messages?limit=50&cursor=<id>` | Retorna histórico já descriptografado, com paginação por cursor. |
+| `POST /api/chat/direct/:handle` | Cria (ou recupera) uma conversa direta estilo WhatsApp usando o handle amigável do destinatário. |
+| `POST /api/chat/direct/:handle/messages` | Envia mensagem direta; cria automaticamente a sala caso ela não exista. |
+| `GET /api/chat/direct/:handle/messages` | Recupera o histórico completo de uma conversa direta. |
+
+Cada perfil recebe um `handle` exclusivo (ex.: `joao123`) durante o registro/login. Ele aparece nas respostas de `/auth/register`, `/auth/login` e nos payloads de `/auth/profiles`, e deve ser compartilhado com outros usuários para que possam “adicionar o contato” e iniciar uma conversa direta.
 
 ### Consumo Realtime
 Assine o canal `chat.room.{roomId}` para receber eventos `chat.message`. O payload já vem descriptografado (conteúdo, remetente, timestamps), facilitando o consumo direto no frontend.

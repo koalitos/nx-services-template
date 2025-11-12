@@ -4,6 +4,7 @@ import {
   InternalServerErrorException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { randomBytes } from 'crypto';
 import { Prisma } from '@prisma/client';
 import { User } from '@supabase/supabase-js';
 import { PrismaService } from '../prisma/prisma.service';
@@ -107,8 +108,21 @@ export class AuthService {
       (user.user_metadata?.avatarUrl as string | undefined) ??
       null;
 
+    const existingProfile = await this.prisma.profile.findUnique({
+      where: { supabaseUserId: user.id },
+      select: { handle: true },
+    });
+
+    const handle =
+      existingProfile?.handle ??
+      (await this.generateUniqueHandle({
+        displayName,
+        email: user.email,
+      }));
+
     const createData: Prisma.ProfileUncheckedCreateInput = {
       supabaseUserId: user.id,
+      handle,
       displayName,
       avatarUrl,
       userTypeId:
@@ -124,6 +138,10 @@ export class AuthService {
 
     if (options && Object.prototype.hasOwnProperty.call(options, 'userTypeId')) {
       updateData.userTypeId = options.userTypeId ?? null;
+    }
+
+    if (!existingProfile?.handle) {
+      updateData.handle = handle;
     }
 
     await this.prisma.profile.upsert({
@@ -170,6 +188,7 @@ export class AuthService {
     return {
       id: profile.id,
       supabaseUserId: profile.supabaseUserId,
+      handle: profile.handle,
       displayName: profile.displayName,
       avatarUrl: profile.avatarUrl,
       userType: profile.userType
@@ -210,5 +229,65 @@ export class AuthService {
     if (!userType) {
       throw new BadRequestException('Tipo de usuario informado nao existe.');
     }
+  }
+
+  private async generateUniqueHandle(options: { displayName: string | null; email: string | null | undefined }) {
+    const candidates = [
+      this.slugify(options.displayName),
+      this.slugify(options.email ? options.email.split('@')[0] ?? null : null),
+    ].filter((value): value is string => Boolean(value));
+
+    if (candidates.length === 0) {
+      candidates.push('user');
+    }
+
+    for (const base of candidates) {
+      const candidate = await this.tryHandleVariants(base);
+      if (candidate) {
+        return candidate;
+      }
+    }
+
+    return `user${this.randomSuffix()}`;
+  }
+
+  private async tryHandleVariants(base: string) {
+    const normalized = base.slice(0, 20);
+
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const suffix = attempt === 0 ? '' : this.randomSuffix();
+      const candidate = `${normalized}${suffix}`.replace(/-+$/, '');
+
+      if (candidate.length < 3) {
+        continue;
+      }
+
+      const exists = await this.prisma.profile.findUnique({
+        where: { handle: candidate },
+        select: { id: true },
+      });
+
+      if (!exists) {
+        return candidate;
+      }
+    }
+
+    return null;
+  }
+
+  private slugify(value: string | null | undefined) {
+    if (!value) {
+      return '';
+    }
+
+    return value
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 20);
+  }
+
+  private randomSuffix() {
+    return randomBytes(2).toString('hex');
   }
 }

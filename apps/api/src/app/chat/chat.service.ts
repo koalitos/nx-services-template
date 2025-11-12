@@ -25,7 +25,16 @@ type ChatMessageRecord = {
 
 type RoomWithRelations = Prisma.ChatRoomGetPayload<{
   include: {
-    participants: true;
+    participants: {
+      include: {
+        profile: {
+          select: {
+            handle: true;
+            displayName: true;
+          };
+        };
+      };
+    };
     messages: true;
   };
 }>;
@@ -39,7 +48,16 @@ export class ChatService {
   ) {}
 
   private readonly roomRelations = {
-    participants: true,
+    participants: {
+      include: {
+        profile: {
+          select: {
+            handle: true,
+            displayName: true,
+          },
+        },
+      },
+    },
     messages: {
       orderBy: { createdAt: 'desc' },
       take: 1,
@@ -53,9 +71,10 @@ export class ChatService {
       throw new BadRequestException('Uma sala precisa de pelo menos dois participantes.');
     }
 
-    const room = await this.prisma.chatRoom.create({
+    const room = (await this.prisma.chatRoom.create({
       data: {
         name: dto.name.trim(),
+        type: 'GROUP',
         participants: {
           create: Array.from(participantSet).map((participantId) => ({
             supabaseUserId: participantId,
@@ -63,9 +82,9 @@ export class ChatService {
         },
       },
       include: this.roomRelations,
-    });
+    })) as RoomWithRelations;
 
-    return this.mapRoom(room as RoomWithRelations);
+    return this.mapRoom(room);
   }
 
   async listRooms(userId: string) {
@@ -92,6 +111,34 @@ export class ChatService {
       lastMessage:
         room.messages.length > 0 ? this.mapMessage(room.messages[0]) : null,
     }));
+  }
+
+  async startDirectChat(user: SupabaseAuthUser, handle: string) {
+    const room = await this.getOrCreateDirectRoom(user, handle, true);
+
+    if (!room) {
+      throw new NotFoundException('Falha ao criar conversa direta.');
+    }
+
+    return this.mapRoom(room);
+  }
+
+  async sendDirectMessage(user: SupabaseAuthUser, handle: string, dto: SendMessageDto) {
+    const room = await this.getOrCreateDirectRoom(user, handle, true);
+    if (!room) {
+      throw new NotFoundException('Falha ao criar conversa direta.');
+    }
+    return this.sendMessage(room.id, user, dto);
+  }
+
+  async getDirectMessages(user: SupabaseAuthUser, handle: string, dto: ListMessagesDto) {
+    const room = await this.getOrCreateDirectRoom(user, handle, false);
+
+    if (!room) {
+      throw new NotFoundException('Conversa direta nao encontrada.');
+    }
+
+    return this.getMessages(room.id, user, dto);
   }
 
   async sendMessage(roomId: string, user: SupabaseAuthUser, dto: SendMessageDto) {
@@ -144,11 +191,14 @@ export class ChatService {
     return {
       id: room.id,
       name: room.name,
+      type: room.type,
       createdAt: room.createdAt,
       updatedAt: room.updatedAt,
       participants: room.participants.map((participant) => ({
         id: participant.id,
         supabaseUserId: participant.supabaseUserId,
+        handle: participant.profile?.handle ?? null,
+        displayName: participant.profile?.displayName ?? null,
         joinedAt: participant.joinedAt,
       })),
       lastMessage:
@@ -195,5 +245,69 @@ export class ChatService {
 
   private roomChannel(roomId: string) {
     return `chat.room.${roomId}`;
+  }
+
+  private async getOrCreateDirectRoom(
+    user: SupabaseAuthUser,
+    handle: string,
+    createIfMissing: boolean
+  ) {
+    const normalizedHandle = handle.trim().toLowerCase();
+
+    const targetProfile = await this.prisma.profile.findUnique({
+      where: { handle: normalizedHandle },
+      select: { supabaseUserId: true, handle: true, displayName: true },
+    });
+
+    if (!targetProfile) {
+      throw new NotFoundException('Usuario alvo nao encontrado.');
+    }
+
+    if (targetProfile.supabaseUserId === user.id) {
+      throw new BadRequestException('Nao e possivel iniciar conversa consigo mesmo.');
+    }
+
+    const directKey = this.buildDirectKey(user.id, targetProfile.supabaseUserId);
+
+    let room = (await this.prisma.chatRoom.findUnique({
+      where: { directKey },
+      include: this.roomRelations,
+    })) as RoomWithRelations | null;
+
+    if (!room && createIfMissing) {
+      const currentProfile = await this.prisma.profile.findUnique({
+        where: { supabaseUserId: user.id },
+        select: { handle: true, displayName: true },
+      });
+
+      if (!currentProfile?.handle) {
+        throw new NotFoundException('Perfil do usuario nao possui handle configurado.');
+      }
+
+      room = (await this.prisma.chatRoom.create({
+        data: {
+          name: this.buildDirectRoomName(currentProfile.handle, targetProfile.handle),
+          type: 'DIRECT',
+          directKey,
+          participants: {
+            create: [
+              { supabaseUserId: user.id },
+              { supabaseUserId: targetProfile.supabaseUserId },
+            ],
+          },
+        },
+        include: this.roomRelations,
+      })) as RoomWithRelations;
+    }
+
+    return room ?? null;
+  }
+
+  private buildDirectKey(userA: string, userB: string) {
+    return [userA, userB].sort().join('#');
+  }
+
+  private buildDirectRoomName(handleA: string, handleB: string) {
+    return `Chat ${[handleA, handleB].sort().join(' & ')}`;
   }
 }
