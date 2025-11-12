@@ -1,0 +1,13 @@
+node_modules
+dist
+tmp
+.nx/cache
+.git
+.gitignore
+.vscode
+Dockerfile*
+deploy
+docs
+.env
+.env.*
+npm-debug.log*

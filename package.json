@@ -8,6 +8,7 @@
     "dev:api": "nx serve api",
     "dev:all": "nx run-many --target=serve --projects=api,auth --parallel",
     "build": "nx build api",
+    "build:all": "nx run-many --target=build --projects=api,auth --parallel",
     "dev:auth": "nx serve auth",
     "build:auth": "nx build auth",
     "start": "nx serve api",
@@ -23,6 +24,7 @@
     "prisma:studio": "prisma studio"
   },
   "dependencies": {
+    "@prisma/client": "^5.22.0",
     "@nestjs/common": "^11.0.0",
     "@nestjs/config": "^4.0.0",
     "@nestjs/core": "^11.0.0",
@@ -49,7 +51,6 @@
     "@nx/web": "22.0.3",
     "@nx/webpack": "22.0.3",
     "@nx/workspace": "22.0.3",
-    "@prisma/client": "^5.22.0",
     "@swc-node/register": "~1.9.1",
     "@swc/core": "~1.5.7",
     "@swc/helpers": "~0.5.11",
