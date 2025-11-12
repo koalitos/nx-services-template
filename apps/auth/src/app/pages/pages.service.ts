@@ -8,19 +8,21 @@ import { UpdatePageDto } from './dto/update-page.dto';
 export class PagesService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private readonly defaultInclude = {
+    roles: {
+      include: {
+        userType: {
+          select: { id: true, name: true },
+        },
+      },
+    },
+  } satisfies Prisma.PageInclude;
+
   async create(dto: CreatePageDto) {
     try {
       return await this.prisma.page.create({
-        data: this.mapDtoToData(dto),
-        include: {
-          roles: {
-            include: {
-              userType: {
-                select: { id: true, name: true },
-              },
-            },
-          },
-        },
+        data: this.mapCreateData(dto),
+        include: this.defaultInclude,
       });
     } catch (error) {
       this.handleKnownErrors(error);
@@ -30,26 +32,18 @@ export class PagesService {
   async findAll() {
     return this.prisma.page.findMany({
       orderBy: { name: 'asc' },
-      include: {
-        roles: {
-          include: { userType: { select: { id: true, name: true } } },
-        },
-      },
+      include: this.defaultInclude,
     });
   }
 
   async findOne(id: string) {
     const page = await this.prisma.page.findUnique({
       where: { id },
-      include: {
-        roles: {
-          include: { userType: { select: { id: true, name: true } } },
-        },
-      },
+      include: this.defaultInclude,
     });
 
     if (!page) {
-      throw new NotFoundException('Página não encontrada.');
+      throw new NotFoundException('Pagina nao encontrada.');
     }
 
     return page;
@@ -61,12 +55,8 @@ export class PagesService {
     try {
       return await this.prisma.page.update({
         where: { id },
-        data: this.mapDtoToData(dto),
-        include: {
-          roles: {
-            include: { userType: { select: { id: true, name: true } } },
-          },
-        },
+        data: this.mapUpdateData(dto),
+        include: this.defaultInclude,
       });
     } catch (error) {
       this.handleKnownErrors(error);
@@ -78,17 +68,22 @@ export class PagesService {
 
     return this.prisma.page.delete({
       where: { id },
-      include: {
-        roles: {
-          include: { userType: { select: { id: true, name: true } } },
-        },
-      },
+      include: this.defaultInclude,
     });
   }
 
-  private mapDtoToData(dto: CreatePageDto | UpdatePageDto): Prisma.PageUncheckedCreateInput | Prisma.PageUncheckedUpdateInput {
-    const data: Prisma.PageUncheckedCreateInput & Prisma.PageUncheckedUpdateInput =
-      {} as Prisma.PageUncheckedCreateInput & Prisma.PageUncheckedUpdateInput;
+  private mapCreateData(dto: CreatePageDto): Prisma.PageUncheckedCreateInput {
+    return {
+      key: dto.key.trim(),
+      name: dto.name.trim(),
+      path: dto.path?.trim() ?? null,
+      description: dto.description?.trim() ?? null,
+      isActive: dto.isActive ?? true,
+    };
+  }
+
+  private mapUpdateData(dto: UpdatePageDto): Prisma.PageUncheckedUpdateInput {
+    const data: Prisma.PageUncheckedUpdateInput = {};
 
     if (dto.key !== undefined) {
       data.key = dto.key.trim();
@@ -120,15 +115,16 @@ export class PagesService {
     });
 
     if (!page) {
-      throw new NotFoundException('Página não encontrada.');
+      throw new NotFoundException('Pagina nao encontrada.');
     }
   }
 
   private handleKnownErrors(error: unknown): never {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === 'P2002') {
-        throw new ConflictException('Já existe uma página com esta chave.');
-      }
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2002'
+    ) {
+      throw new ConflictException('Ja existe uma pagina com esta chave.');
     }
 
     throw error;
