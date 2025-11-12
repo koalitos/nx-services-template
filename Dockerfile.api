@@ -31,6 +31,9 @@ ENV PORT=3000
 COPY --from=build /workspace/dist/apps/api/package*.json ./
 RUN npm ci --omit=dev
 
+# Copia o client gerado na fase de build (contem engines/bindings)
+COPY --from=deps /workspace/node_modules/.prisma /app/node_modules/.prisma
+
 COPY --from=build /workspace/dist/apps/api ./
 
 EXPOSE 3000
