@@ -90,3 +90,41 @@ model UserTypePageRole {
 
   @@unique([userTypeId, pageId])
 }
+
+model ChatRoom {
+  id           String            @id @default(uuid())
+  name         String
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  participants ChatParticipant[]
+  messages     ChatMessage[]
+}
+
+model ChatParticipant {
+  id             String       @id @default(uuid())
+  chatRoomId     String
+  supabaseUserId String
+  joinedAt       DateTime     @default(now())
+  leftAt         DateTime?
+
+  chatRoom ChatRoom   @relation(fields: [chatRoomId], references: [id], onDelete: Cascade)
+  messages ChatMessage[]
+
+  @@unique([chatRoomId, supabaseUserId])
+}
+
+model ChatMessage {
+  id                   String   @id @default(uuid())
+  chatRoomId           String
+  senderParticipantId  String
+  senderUserId         String
+  ciphertext           String
+  iv                   String
+  authTag              String
+  createdAt            DateTime @default(now())
+
+  chatRoom    ChatRoom       @relation(fields: [chatRoomId], references: [id], onDelete: Cascade)
+  participant ChatParticipant @relation(fields: [senderParticipantId], references: [id], onDelete: Cascade)
+
+  @@index([chatRoomId, createdAt])
+}

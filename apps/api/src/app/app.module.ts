@@ -6,6 +6,7 @@ import { AppService } from './app.service';
 import { MathModule } from './math/math.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { SupabaseModule } from './supabase/supabase.module';
+import { ChatModule } from './chat/chat.module';
 
 @Module({
   imports: [
@@ -19,11 +20,13 @@ import { SupabaseModule } from './supabase/supabase.module';
         SUPABASE_ANON_KEY: Joi.string().required(),
         SUPABASE_SERVICE_ROLE_KEY: Joi.string().required(),
         SUPABASE_REALTIME_CHANNEL: Joi.string().default('calculations'),
+        CHAT_ENCRYPTION_KEY: Joi.string().min(43).required(),
       }),
     }),
     PrismaModule,
     SupabaseModule,
     MathModule,
+    ChatModule,
   ],
   controllers: [AppController],
   providers: [AppService],

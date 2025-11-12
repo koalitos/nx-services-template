@@ -17,7 +17,7 @@ Backend de referencia para iniciar projetos NestJS usando Nx, Prisma e Supabase 
    ```bash
    cp .env.example .env
    ```
-2. Ajuste `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` e defina um `ADMIN_API_KEY` forte para proteger as rotas administrativas do Auth Service.
+2. Ajuste `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, defina um `ADMIN_API_KEY` forte para proteger as rotas administrativas do Auth Service e gere um `CHAT_ENCRYPTION_KEY` de 32 bytes (hex/base64) para criptografar as mensagens.
 3. Gere o client Prisma sempre que alterar `schema.prisma`:
    ```bash
    npm run prisma:generate
@@ -48,6 +48,7 @@ Backend de referencia para iniciar projetos NestJS usando Nx, Prisma e Supabase 
   - dispara evento no Supabase Realtime.
 - **Microservico de Auth** (`apps/auth`) com `POST /auth/register` e `POST /auth/login` para criar usuarios e emitir JWTs do Supabase (via Service Role Key).
 - **Console RBAC protegido por API key**: CRUDs para grupos, tipos, paginas e vinculos tipo/pagina, alem do gerenciamento de perfis (`PATCH /auth/profiles/:supabaseUserId` para atualizar displayName/avatar e `/user-type` para alterar o tipo associado).
+- **Chat criptografado com historico** (`/api/chat/...`): cria salas multiusuario, armazena mensagens com AES-256-GCM, expõe historico descriptografado e propaga novos eventos em canais Realtime (`chat.room.{roomId}`).
 - **Swagger + ValidationPipe** habilitados em ambos os servicos.
 
 ## Scripts uteis
