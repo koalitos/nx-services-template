@@ -8,6 +8,17 @@ import { UpdateUserTypeDto } from './dto/update-user-type.dto';
 export class UserTypesService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private userTypeInclude() {
+    return {
+      userGroup: true,
+      pageRoles: {
+        include: {
+          page: true,
+        },
+      },
+    };
+  }
+
   async create(dto: CreateUserTypeDto) {
     if (dto.userGroupId) {
       await this.ensureGroupExists(dto.userGroupId);
@@ -21,7 +32,7 @@ export class UserTypesService {
           isActive: dto.isActive ?? true,
           userGroupId: dto.userGroupId ?? null,
         },
-        include: { userGroup: true },
+        include: this.userTypeInclude(),
       });
     } catch (error) {
       this.handleKnownErrors(error);
@@ -31,18 +42,18 @@ export class UserTypesService {
   async findAll() {
     return this.prisma.userType.findMany({
       orderBy: { name: 'asc' },
-      include: { userGroup: true },
+      include: this.userTypeInclude(),
     });
   }
 
   async findOne(id: string) {
     const userType = await this.prisma.userType.findUnique({
       where: { id },
-      include: { userGroup: true },
+      include: this.userTypeInclude(),
     });
 
     if (!userType) {
-      throw new NotFoundException('Tipo de usuário não encontrado.');
+      throw new NotFoundException('Tipo de usuario nao encontrado.');
     }
 
     return userType;
@@ -77,7 +88,7 @@ export class UserTypesService {
       return await this.prisma.userType.update({
         where: { id },
         data,
-        include: { userGroup: true },
+        include: this.userTypeInclude(),
       });
     } catch (error) {
       this.handleKnownErrors(error);
@@ -89,7 +100,7 @@ export class UserTypesService {
 
     return this.prisma.userType.delete({
       where: { id },
-      include: { userGroup: true },
+      include: this.userTypeInclude(),
     });
   }
 
@@ -100,7 +111,7 @@ export class UserTypesService {
     });
 
     if (!exists) {
-      throw new NotFoundException('Tipo de usuário não encontrado.');
+      throw new NotFoundException('Tipo de usuario nao encontrado.');
     }
   }
 
@@ -111,14 +122,14 @@ export class UserTypesService {
     });
 
     if (!group) {
-      throw new NotFoundException('Grupo informado não existe.');
+      throw new NotFoundException('Grupo informado nao existe.');
     }
   }
 
   private handleKnownErrors(error: unknown): never {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === 'P2002') {
-        throw new ConflictException('Já existe um tipo com este nome para o grupo informado.');
+        throw new ConflictException('Ja existe um tipo com este nome para o grupo informado.');
       }
     }
 

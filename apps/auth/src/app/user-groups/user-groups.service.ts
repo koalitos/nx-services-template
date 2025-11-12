@@ -8,6 +8,20 @@ import { UpdateUserGroupDto } from './dto/update-user-group.dto';
 export class UserGroupsService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private includeRelations() {
+    return {
+      userTypes: {
+        include: {
+          pageRoles: {
+            include: {
+              page: true,
+            },
+          },
+        },
+      },
+    };
+  }
+
   async create(dto: CreateUserGroupDto) {
     try {
       return await this.prisma.userGroup.create({
@@ -16,7 +30,7 @@ export class UserGroupsService {
           description: dto.description?.trim(),
           isActive: dto.isActive ?? true,
         },
-        include: { userTypes: true },
+        include: this.includeRelations(),
       });
     } catch (error) {
       this.handleKnownErrors(error);
@@ -26,18 +40,18 @@ export class UserGroupsService {
   async findAll() {
     return this.prisma.userGroup.findMany({
       orderBy: { name: 'asc' },
-      include: { userTypes: true },
+      include: this.includeRelations(),
     });
   }
 
   async findOne(id: string) {
     const group = await this.prisma.userGroup.findUnique({
       where: { id },
-      include: { userTypes: true },
+      include: this.includeRelations(),
     });
 
     if (!group) {
-      throw new NotFoundException('Grupo de usuário não encontrado.');
+      throw new NotFoundException('Grupo de usuario nao encontrado.');
     }
 
     return group;
@@ -64,7 +78,7 @@ export class UserGroupsService {
       return await this.prisma.userGroup.update({
         where: { id },
         data,
-        include: { userTypes: true },
+        include: this.includeRelations(),
       });
     } catch (error) {
       this.handleKnownErrors(error);
@@ -76,7 +90,7 @@ export class UserGroupsService {
 
     return this.prisma.userGroup.delete({
       where: { id },
-      include: { userTypes: true },
+      include: this.includeRelations(),
     });
   }
 
@@ -87,14 +101,14 @@ export class UserGroupsService {
     });
 
     if (!exists) {
-      throw new NotFoundException('Grupo de usuário não encontrado.');
+      throw new NotFoundException('Grupo de usuario nao encontrado.');
     }
   }
 
   private handleKnownErrors(error: unknown): never {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === 'P2002') {
-        throw new ConflictException('Já existe um grupo com este nome.');
+        throw new ConflictException('Ja existe um grupo com este nome.');
       }
     }
 

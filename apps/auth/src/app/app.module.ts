@@ -8,6 +8,9 @@ import { PrismaModule } from './prisma/prisma.module';
 import { SupabaseModule } from './supabase/supabase.module';
 import { UserGroupsModule } from './user-groups/user-groups.module';
 import { UserTypesModule } from './user-types/user-types.module';
+import { PagesModule } from './pages/pages.module';
+import { UserTypePageRolesModule } from './user-type-page-roles/user-type-page-roles.module';
+import { ProfilesModule } from './profiles/profiles.module';
 
 @Module({
   imports: [
@@ -27,6 +30,9 @@ import { UserTypesModule } from './user-types/user-types.module';
     AuthModule,
     UserGroupsModule,
     UserTypesModule,
+    PagesModule,
+    UserTypePageRolesModule,
+    ProfilesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

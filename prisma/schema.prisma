@@ -19,9 +19,11 @@ model Profile {
   supabaseUserId  String           @unique
   displayName     String?
   avatarUrl       String?
+  userTypeId      String?
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   calculationLogs CalculationLog[]
+  userType        UserType?        @relation(fields: [userTypeId], references: [id], onDelete: SetNull)
 }
 
 model CalculationLog {
@@ -48,15 +50,43 @@ model UserGroup {
 }
 
 model UserType {
-  id          String     @id @default(uuid())
+  id          String             @id @default(uuid())
   name        String
   description String?
-  isActive    Boolean    @default(true)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  isActive    Boolean            @default(true)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
   userGroupId String?
 
   userGroup UserGroup? @relation(fields: [userGroupId], references: [id], onDelete: SetNull)
+  pageRoles UserTypePageRole[]
+  profiles  Profile[]
 
   @@unique([userGroupId, name])
+}
+
+model Page {
+  id          String             @id @default(uuid())
+  key         String             @unique
+  name        String
+  path        String?
+  description String?
+  isActive    Boolean            @default(true)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  roles       UserTypePageRole[]
+}
+
+model UserTypePageRole {
+  id         String   @id @default(uuid())
+  userTypeId String
+  pageId     String
+  role       String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  userType UserType @relation(fields: [userTypeId], references: [id], onDelete: Cascade)
+  page     Page     @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  @@unique([userTypeId, pageId])
 }

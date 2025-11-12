@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEmail, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsEmail, IsOptional, IsString, IsUUID, MinLength } from 'class-validator';
 
 export class RegisterDto {
   @ApiProperty({
@@ -25,4 +25,12 @@ export class RegisterDto {
   @IsOptional()
   @IsString()
   displayName?: string;
+
+  @ApiPropertyOptional({
+    description: 'Identificador do tipo de usuario que define as roles do perfil.',
+    example: '1bfa0a3b-e8c1-424d-95ed-a95955c8c5db',
+  })
+  @IsOptional()
+  @IsUUID(4)
+  userTypeId?: string;
 }
