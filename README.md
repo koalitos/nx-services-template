@@ -2,7 +2,7 @@
 
 Backend de referencia para iniciar projetos NestJS usando Nx, Prisma e Supabase (Auth + Realtime), agora dividido em dois servicos:
 
-- `apps/api`: rotas de negocio (math/add, health, realtime etc.).
+- `apps/api`: rotas de negocio (chat criptografado, health, integrações Realtime).
 - `apps/auth`: microservico dedicado a registrar e autenticar usuarios.
 
 ## Stack principal
@@ -40,12 +40,7 @@ Backend de referencia para iniciar projetos NestJS usando Nx, Prisma e Supabase 
 - **Guarda Supabase** (`SupabaseAuthGuard`) para validar tokens Bearer no servico principal.
 - **Decorator `@SupabaseUser()`** para consumir o usuario autenticado nas rotas protegidas.
 - **Servicos Realtime** que broadcastam `calculation.performed`.
-- **PrismaService** compartilhado (schema com `Profile` e `CalculationLog`).
-- **Rota de exemplo** `POST /api/math/add`:
-  - exige token Supabase;
-  - soma dois numeros;
-  - registra log via Prisma;
-  - dispara evento no Supabase Realtime.
+- **PrismaService** compartilhado (schema com `Profile`, RBAC e chat).
 - **Microservico de Auth** (`apps/auth`) com `POST /auth/register` e `POST /auth/login` para criar usuarios e emitir JWTs do Supabase (via Service Role Key).
 - **Console RBAC protegido por API key**: CRUDs para grupos, tipos, paginas e vinculos tipo/pagina, alem do gerenciamento de perfis (`PATCH /auth/profiles/:supabaseUserId` para atualizar displayName/avatar e `/user-type` para alterar o tipo associado).
 - **Handles amigaveis**: cada perfil recebe um identificador unico (ex.: `maria123`) para ser compartilhado em chats diretos ou integrações com outros sistemas.

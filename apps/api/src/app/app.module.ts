@@ -3,7 +3,6 @@ import { ConfigModule } from '@nestjs/config';
 import * as Joi from 'joi';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { MathModule } from './math/math.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { SupabaseModule } from './supabase/supabase.module';
 import { ChatModule } from './chat/chat.module';
@@ -25,7 +24,6 @@ import { ChatModule } from './chat/chat.module';
     }),
     PrismaModule,
     SupabaseModule,
-    MathModule,
     ChatModule,
   ],
   controllers: [AppController],

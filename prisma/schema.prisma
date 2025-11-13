@@ -23,22 +23,8 @@ model Profile {
   userTypeId      String?
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
-  calculationLogs CalculationLog[]
   userType        UserType?        @relation(fields: [userTypeId], references: [id], onDelete: SetNull)
   chatParticipants ChatParticipant[]
-}
-
-model CalculationLog {
-  id             String   @id @default(uuid())
-  supabaseUserId String
-  operandA       Float
-  operandB       Float
-  result         Float
-  createdAt      DateTime @default(now())
-
-  profile Profile? @relation(fields: [supabaseUserId], references: [supabaseUserId], onDelete: Cascade)
-
-  @@index([supabaseUserId])
 }
 
 model UserGroup {
