@@ -4,6 +4,7 @@ import {
   Get,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
   Query,
   UseGuards,
@@ -101,6 +102,17 @@ export class ChatController {
     @Query() query: ListMessagesDto
   ) {
     return this.chatService.getMessages(roomId, this.ensureUser(user), query);
+  }
+
+  @Patch('rooms/:roomId/messages/:messageId/read')
+  @ApiOperation({ summary: 'Marca uma mensagem como lida pelo usuario atual.' })
+  @ApiOkResponse({ description: 'Mensagem marcada como lida.' })
+  markMessageAsRead(
+    @SupabaseUser() user: SupabaseAuthUser | undefined,
+    @Param('roomId', new ParseUUIDPipe()) roomId: string,
+    @Param('messageId', new ParseUUIDPipe()) messageId: string
+  ) {
+    return this.chatService.markMessageAsRead(roomId, messageId, this.ensureUser(user));
   }
 
   private ensureUser(user?: SupabaseAuthUser): SupabaseAuthUser {

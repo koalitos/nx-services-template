@@ -4,13 +4,13 @@ import { IsInt, IsOptional, IsPositive, IsUUID, Max } from 'class-validator';
 
 export class ListMessagesDto {
   @ApiPropertyOptional({
-    description: 'Quantidade maxima de mensagens retornadas (default 50, max 100).',
+    description: 'Quantidade maxima de mensagens retornadas (default 50, max 500).',
     example: 25,
   })
   @IsOptional()
   @IsInt()
   @IsPositive()
-  @Max(100)
+  @Max(500)
   @Transform(({ value }) => (value !== undefined ? Number(value) : value))
   limit?: number;
 

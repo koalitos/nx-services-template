@@ -49,7 +49,7 @@ Backend de referencia para iniciar projetos NestJS usando Nx, Prisma e Supabase 
 - **Microservico de Auth** (`apps/auth`) com `POST /auth/register` e `POST /auth/login` para criar usuarios e emitir JWTs do Supabase (via Service Role Key).
 - **Console RBAC protegido por API key**: CRUDs para grupos, tipos, paginas e vinculos tipo/pagina, alem do gerenciamento de perfis (`PATCH /auth/profiles/:supabaseUserId` para atualizar displayName/avatar e `/user-type` para alterar o tipo associado).
 - **Handles amigaveis**: cada perfil recebe um identificador unico (ex.: `maria123`) para ser compartilhado em chats diretos ou integrações com outros sistemas.
-- **Chat criptografado com historico** (`/api/chat/...`): cria salas multiusuario e conversas diretas tipo WhatsApp (`/api/chat/direct/:handle`), armazena mensagens com AES-256-GCM, expõe historico descriptografado e propaga novos eventos em canais Realtime (`chat.room.{roomId}`).
+- **Chat criptografado com historico** (`/api/chat/...`): cria salas multiusuario e conversas diretas tipo WhatsApp (`/api/chat/direct/:handle`), armazena mensagens com AES-256-GCM, expõe historico descriptografado, permite marcar mensagens como lidas e propaga eventos (`chat.message`, `chat.message.read`) nos canais `chat.room.{roomId}`.
 - **Swagger + ValidationPipe** habilitados em ambos os servicos.
 
 ## Scripts uteis

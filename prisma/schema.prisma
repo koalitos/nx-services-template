@@ -114,6 +114,7 @@ model ChatParticipant {
   chatRoom ChatRoom   @relation(fields: [chatRoomId], references: [id], onDelete: Cascade)
   profile  Profile    @relation(fields: [supabaseUserId], references: [supabaseUserId], onDelete: Cascade)
   messages ChatMessage[]
+  receipts ChatMessageReceipt[]
 
   @@unique([chatRoomId, supabaseUserId])
 }
@@ -130,6 +131,7 @@ model ChatMessage {
 
   chatRoom    ChatRoom       @relation(fields: [chatRoomId], references: [id], onDelete: Cascade)
   participant ChatParticipant @relation(fields: [senderParticipantId], references: [id], onDelete: Cascade)
+  receipts    ChatMessageReceipt[]
 
   @@index([chatRoomId, createdAt])
 }
@@ -137,4 +139,19 @@ model ChatMessage {
 enum ChatRoomType {
   GROUP
   DIRECT
+}
+
+model ChatMessageReceipt {
+  id            String          @id @default(uuid())
+  messageId     String
+  participantId String
+  readAt        DateTime?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  message     ChatMessage     @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  participant ChatParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, participantId])
+  @@index([participantId, readAt])
 }

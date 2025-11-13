@@ -98,19 +98,52 @@ export class ChatService {
       orderBy: { updatedAt: 'desc' },
     })) as RoomWithRelations[];
 
-    return rooms.map((room) => ({
-      id: room.id,
-      name: room.name,
-      createdAt: room.createdAt,
-      updatedAt: room.updatedAt,
-      participants: room.participants.map((participant) => ({
-        id: participant.id,
-        supabaseUserId: participant.supabaseUserId,
-        joinedAt: participant.joinedAt,
-      })),
-      lastMessage:
-        room.messages.length > 0 ? this.mapMessage(room.messages[0]) : null,
-    }));
+    const viewerParticipantIds = rooms.map((room) => {
+      const participant = room.participants.find(
+        (candidate) => candidate.supabaseUserId === userId
+      );
+      return participant?.id ?? null;
+    });
+
+    const lastMessageIds = rooms
+      .map((room) => room.messages[0]?.id)
+      .filter((id): id is string => Boolean(id));
+
+    const receiptMap = new Map<string, Date | null>();
+    if (lastMessageIds.length > 0) {
+      const receipts = await this.prisma.chatMessageReceipt.findMany({
+        where: {
+          messageId: { in: lastMessageIds },
+          participantId: {
+            in: viewerParticipantIds.filter((id): id is string => Boolean(id)),
+          },
+        },
+        select: {
+          messageId: true,
+          participantId: true,
+          readAt: true,
+        },
+      });
+
+      receipts.forEach((receipt) => {
+        receiptMap.set(`${receipt.messageId}:${receipt.participantId}`, receipt.readAt ?? null);
+      });
+    }
+
+    return rooms.map((room, index) => {
+      const viewerParticipantId = viewerParticipantIds[index];
+      return {
+        ...this.mapRoom(room, userId),
+        lastMessage:
+          room.messages.length > 0
+            ? this.mapMessage(room.messages[0], {
+                readAt: viewerParticipantId
+                  ? receiptMap.get(`${room.messages[0].id}:${viewerParticipantId}`) ?? null
+                  : null,
+              })
+            : null,
+      };
+    });
   }
 
   async startDirectChat(user: SupabaseAuthUser, handle: string) {
@@ -120,7 +153,7 @@ export class ChatService {
       throw new NotFoundException('Falha ao criar conversa direta.');
     }
 
-    return this.mapRoom(room);
+    return this.mapRoom(room, user.id);
   }
 
   async sendDirectMessage(user: SupabaseAuthUser, handle: string, dto: SendMessageDto) {
@@ -156,7 +189,9 @@ export class ChatService {
       },
     });
 
-    const response = this.mapMessage(message);
+    await this.createReceiptsForMessage(message.id, roomId, participant.id);
+
+    const response = this.mapMessage(message, { readAt: new Date() });
 
     await this.realtime.broadcast({
       channel: this.roomChannel(roomId),
@@ -168,7 +203,7 @@ export class ChatService {
   }
 
   async getMessages(roomId: string, user: SupabaseAuthUser, dto: ListMessagesDto) {
-    await this.ensureParticipant(roomId, user.id);
+    const participant = await this.ensureParticipant(roomId, user.id);
 
     const take = dto.limit ?? 50;
 
@@ -184,13 +219,80 @@ export class ChatService {
         : {}),
     });
 
-    return messages.reverse().map((message) => this.mapMessage(message));
+    const readMap = new Map<string, Date | null>();
+    if (messages.length > 0) {
+      const receipts = await this.prisma.chatMessageReceipt.findMany({
+        where: {
+          participantId: participant.id,
+          messageId: { in: messages.map((message) => message.id) },
+        },
+        select: {
+          messageId: true,
+          readAt: true,
+        },
+      });
+
+      receipts.forEach((receipt) => {
+        readMap.set(receipt.messageId, receipt.readAt ?? null);
+      });
+    }
+
+    return messages
+      .reverse()
+      .map((message) => this.mapMessage(message, { readAt: readMap.get(message.id) ?? null }));
   }
 
-  private mapRoom(room: RoomWithRelations) {
+  async markMessageAsRead(roomId: string, messageId: string, user: SupabaseAuthUser) {
+    const participant = await this.ensureParticipant(roomId, user.id);
+
+    const messageExists = await this.prisma.chatMessage.findFirst({
+      where: { id: messageId, chatRoomId: roomId },
+      select: { id: true },
+    });
+
+    if (!messageExists) {
+      throw new NotFoundException('Mensagem nao encontrada nesta sala.');
+    }
+
+    const readAt = new Date();
+
+    await this.prisma.chatMessageReceipt.updateMany({
+      where: {
+        messageId,
+        participantId: participant.id,
+      },
+      data: { readAt },
+    });
+
+    await this.realtime.broadcast({
+      channel: this.roomChannel(roomId),
+      event: 'chat.message.read',
+      payload: {
+        messageId,
+        readerUserId: user.id,
+        readAt,
+      },
+    });
+
+    return { messageId, readAt };
+  }
+
+  private mapRoom(room: RoomWithRelations, viewerId?: string) {
+    let resolvedName = room.name;
+
+    if (room.type === 'DIRECT' && viewerId) {
+      const counterpart = room.participants.find(
+        (participant) => participant.supabaseUserId !== viewerId
+      );
+      resolvedName =
+        counterpart?.profile?.displayName ??
+        counterpart?.profile?.handle ??
+        room.name;
+    }
+
     return {
       id: room.id,
-      name: room.name,
+      name: resolvedName,
       type: room.type,
       createdAt: room.createdAt,
       updatedAt: room.updatedAt,
@@ -201,12 +303,10 @@ export class ChatService {
         displayName: participant.profile?.displayName ?? null,
         joinedAt: participant.joinedAt,
       })),
-      lastMessage:
-        room.messages.length > 0 ? this.mapMessage(room.messages[0]) : null,
     };
   }
 
-  private mapMessage(message: ChatMessageRecord) {
+  private mapMessage(message: ChatMessageRecord, options?: { readAt?: Date | null }) {
     const plaintext = this.encryption.decrypt({
       ciphertext: message.ciphertext,
       iv: message.iv,
@@ -219,6 +319,8 @@ export class ChatService {
       senderUserId: message.senderUserId,
       content: plaintext,
       createdAt: message.createdAt,
+      readAt: options?.readAt ?? null,
+      isRead: Boolean(options?.readAt),
     };
   }
 
@@ -309,5 +411,25 @@ export class ChatService {
 
   private buildDirectRoomName(handleA: string, handleB: string) {
     return `Chat ${[handleA, handleB].sort().join(' & ')}`;
+  }
+
+  private async createReceiptsForMessage(
+    messageId: string,
+    roomId: string,
+    senderParticipantId: string
+  ) {
+    const participants = await this.prisma.chatParticipant.findMany({
+      where: { chatRoomId: roomId },
+      select: { id: true },
+    });
+
+    await this.prisma.chatMessageReceipt.createMany({
+      data: participants.map((participant) => ({
+        messageId,
+        participantId: participant.id,
+        readAt: participant.id === senderParticipantId ? new Date() : null,
+      })),
+      skipDuplicates: true,
+    });
   }
 }
